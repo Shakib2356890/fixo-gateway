@@ -1,6 +1,10 @@
 # Fixo Gateway — build the debug APK in the cloud (GitHub Actions)
 # The source is uploaded as fixo-gateway-android.zip; this workflow
 # unzips it first, then builds. No secrets are used anywhere.
+# NOTE: do NOT use android-actions/setup-android — it fails on the
+# current runner looking for the obsolete 'tools' package. The runner
+# already has the Android SDK preinstalled; we install the needed
+# packages with sdkmanager directly.
 
 name: Build Fixo Gateway APK
 
@@ -25,13 +29,13 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Install SDK packages and accept licenses
         run: |
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-33" "build-tools;33.0.0"
+          ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}
+          SDKMGR=$(ls -d "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager | head -n 1)
+          echo "Using sdkmanager: $SDKMGR"
+          yes | "$SDKMGR" --licenses
+          "$SDKMGR" "platforms;android-33" "build-tools;33.0.0"
 
       - name: Set up Gradle 8.5
         uses: gradle/actions/setup-gradle@v3
